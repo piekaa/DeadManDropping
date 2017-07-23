@@ -10,6 +10,8 @@ public class LineDrawer : MonoBehaviour {
 
 	private GameObject currentLine;
 
+	List<GameObject> toDestroy;
+
 	bool down;
 	float sizeX;
 	float sizeY;
@@ -32,34 +34,90 @@ public class LineDrawer : MonoBehaviour {
 			float dy = currentWorldMousePoint.y - startWorldMousePoint.y;
 
 			float distance = Vector3.Distance (currentWorldMousePoint, startWorldMousePoint);
+
+			if (distance == 0)
+			{
+				return; 
+			} 
+
 			float a = -angle (startWorldMousePoint, currentWorldMousePoint);
  
-			currentLine.transform.localScale = new Vector3 (currentLine.transform.localScale.x, distance, currentLine.transform.localScale.z);
+			currentLine.transform.localScale = new Vector3 (1 / sizeX, distance / sizeY, currentLine.transform.localScale.z);
 			currentLine.transform.rotation = Quaternion.Euler (new Vector3 (0, 0, a));
+
+
+			if (needNewLine ())
+				newLine ();
 
 		}
 	
 		if (Input.GetMouseButtonDown (0))
 		{
-			startWorldMousePoint = Camera.main.ScreenToWorldPoint (Input.mousePosition);
-			startWorldMousePoint .z = LineZ;
-			currentLine = Instantiate (Line, startWorldMousePoint , Quaternion.identity);
-			down = true;
-
-			SpriteRenderer spriteRenderer = Line.GetComponent<SpriteRenderer> ();
-			print ("Size: " + spriteRenderer.bounds.size);
-			sizeX = spriteRenderer.bounds.size.x;
-			sizeY = spriteRenderer.bounds.size.y;
-
+			toDestroy = new List<GameObject> (); 
+			newLine ();
 		}
 
 		if (Input.GetMouseButtonUp (0))
 		{
 			down = false;
+
+			print (toDestroy.Count);
+
+			string s = "";
+			GameObject lineB4 = null;
+			foreach (GameObject line in toDestroy)
+			{
+				Destroy (line);
+
+				if (s == "")
+				{
+					s += "A: ";
+					lineB4 = line;
+					continue;
+				}
+
+
+				s += string.Format("{0:0.##} ",  angle (lineB4.transform.position, line.transform.position));
+
+
+				lineB4 = line;
+
+			}
+
+			print (s);
+
 		}
 
 	}
 
+	private const float NEW_LINE_DISTANCE = 0.5f;
+	private bool needNewLine()
+	{
+		Vector3 currentWorldMousePoint = Camera.main.ScreenToWorldPoint (Input.mousePosition);
+		currentWorldMousePoint.z = LineZ;
+
+		if (Vector3.Distance (currentWorldMousePoint, startWorldMousePoint) >= NEW_LINE_DISTANCE)
+			return true;
+		return false;
+
+
+	}
+
+
+	private void newLine()
+	{
+		startWorldMousePoint = Camera.main.ScreenToWorldPoint (Input.mousePosition);
+		startWorldMousePoint .z = LineZ;
+		currentLine = Instantiate (Line, startWorldMousePoint , Quaternion.identity);
+		down = true;
+
+		SpriteRenderer spriteRenderer = Line.GetComponent<SpriteRenderer> (); 
+		sizeX = spriteRenderer.bounds.size.x;
+		sizeY = spriteRenderer.bounds.size.y;
+
+		currentLine.transform.localScale = new Vector3 (1 / sizeX, 0, currentLine.transform.localScale.z);
+		toDestroy.Add (currentLine);
+	}
 
 
 	private float angle(Vector3 start, Vector3 end)
