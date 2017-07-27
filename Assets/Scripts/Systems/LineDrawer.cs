@@ -2,15 +2,21 @@
 using System.Collections.Generic;
 using UnityEngine;
 
+
+public delegate void OnNewLine(List<Vector2> points);
+
+
 public class LineDrawer : MonoBehaviour {
 
 	public int LineZ = 0;
 
 	public GameObject Line;
 
+	public OnNewLine NewLineEvent;
+
 	private GameObject currentLine;
 
-	List<GameObject> toDestroy;
+	List<GameObject> toDestroy; 
 
 	bool down;
 	float sizeX;
@@ -40,7 +46,7 @@ public class LineDrawer : MonoBehaviour {
 				return; 
 			} 
 
-			float a = -angle (startWorldMousePoint, currentWorldMousePoint);
+			float a = -Utils.Angle(startWorldMousePoint, currentWorldMousePoint);
  
 			currentLine.transform.localScale = new Vector3 (1 / sizeX, distance / sizeY, currentLine.transform.localScale.z);
 			currentLine.transform.rotation = Quaternion.Euler (new Vector3 (0, 0, a));
@@ -53,20 +59,24 @@ public class LineDrawer : MonoBehaviour {
 	
 		if (Input.GetMouseButtonDown (0))
 		{
-			toDestroy = new List<GameObject> (); 
+			toDestroy = new List<GameObject> ();  
 			newLine ();
 		}
 
 		if (Input.GetMouseButtonUp (0))
 		{
-			down = false;
-
-			print (toDestroy.Count);
+			down = false; 
 
 			string s = "";
 			GameObject lineB4 = null;
+
+			List<Vector2> points = new List<Vector2> ();
+
 			foreach (GameObject line in toDestroy)
 			{
+
+				points.Add (new Vector2 (line.transform.position.x, line.transform.position.y));
+
 				Destroy (line);
 
 				if (s == "")
@@ -77,14 +87,13 @@ public class LineDrawer : MonoBehaviour {
 				}
 
 
-				s += string.Format("{0:0.##} ",  angle (lineB4.transform.position, line.transform.position));
 
 
 				lineB4 = line;
 
 			}
 
-			print (s);
+			NewLineEvent (points);
 
 		}
 
@@ -120,28 +129,7 @@ public class LineDrawer : MonoBehaviour {
 	}
 
 
-	private float angle(Vector3 start, Vector3 end)
-	{
 
-		Vector2 v1 = new Vector2 (start.x, start.y);
-		Vector2 v2 = new Vector2 (end.x, end.y);
-		float a = v2.x - v1.x;
-		float b = v2.y - v1.y;
-		float c = Vector2.Distance(v1, v2);
-
-		float acos = Mathf.Acos (b / c) * 180 / Mathf.PI;
-
-		float result;
-		if (a > 0)
-		{
-			result = acos;
-		} else
-		{
-			result = 360 - acos;
-		}
-		return result;
-
-	}
 
 
 }
